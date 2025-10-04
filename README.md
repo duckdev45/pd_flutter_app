@@ -1,10 +1,5 @@
 # PD Flutter App
 
-![PD Logo](assets/images/pd_logo.png)
-
-Flutter App for PD Project
-
-
 ### 安裝與執行
 
 1.  **Clone 專案庫**
