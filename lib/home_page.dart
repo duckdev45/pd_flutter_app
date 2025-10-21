@@ -81,77 +81,108 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✨ [魔改點 1] 注入靈魂！這才是我們要的配色！
     const Color pageBackgroundColor = Color(0xFFF8F8F8);
-    const Color mainContentColorDark = Color(0xFF36B37E);
-    const Color mainContentColorLight = Color(0xFF6DC8A3);
+    // 婚禮 App 色系
+    const Color accentOrange = Color(0xFFF7AE34); // 婚禮橘 (CTA色)
+    const Color darkGrayText = Color(0xFF59534C); // 婚禮深灰 (標題)
+    const Color lightGrayText = Color(0xFF867F78); // 婚禮淺灰 (內文)
+
+    // ✨ [魔改點 2] 關鍵！把背景色改掉！
+    // 不再用快看不到的 #F9F6F1
+    const Color mainContentColorDark = Color(0xFF6D635B); // 改為沉穩的暖灰色
+    const Color mainContentColorLight = Color(0xFFF9F6F1); // <-- 奶油米色
 
     return Scaffold(
-      backgroundColor: pageBackgroundColor,
+      backgroundColor: mainContentColorLight, // 直接用奶油米色填滿全頁
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- 1. 頂部文字區塊 ---
-            _buildHeader(), // ✨ [保留] 你的 Header 寫得很好
+            _buildHeader(
+              accentOrange: accentOrange,
+              darkGrayText: darkGrayText,
+              lightGrayText: lightGrayText,
+            ),
+
             // --- 2. 綠色主內容區塊 ---
             Expanded(
-              child: LayoutBuilder(
-                // ✨ [保留] 你的 LayoutBuilder 結構是正確的！
-                builder: (context, constraints) {
-                  final double screenHeight = constraints.maxHeight;
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // --- 深綠色 (底下) ---
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: screenHeight,
-                        child: ClipPath(
-                          clipper: MainArcClipper(),
-                          child: Container(color: mainContentColorDark),
-                        ),
-                      ),
-                      // --- 淺綠色 (疊在上面) ---
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: screenHeight * 0.9,
-                        child: ClipPath(
-                          clipper: OverlayArcClipper(),
-                          child: Container(
-                            color: mainContentColorLight.withAlpha(200),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // --- 新增底層填滿奶油米色 ---
+                  Container(color: mainContentColorLight),
+
+                  LayoutBuilder(
+                    // ✨ [保留] 你的 LayoutBuilder 結構是正確的！
+                    builder: (context, constraints) {
+                      final double screenHeight = constraints.maxHeight;
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // --- ✨ [魔改點 3] 深色底 -> 燕麥色 ---
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: screenHeight,
+                            child: ClipPath(
+                              clipper: MainArcClipper(),
+                              child: Container(
+                                color: mainContentColorDark,
+                              ), // <-- 套用燕麥色
+                            ),
                           ),
-                        ),
-                      ),
 
-                      // --- ✨ [魔改點 1] 新增：打卡地點 ---
-                      Positioned(
-                        top: screenHeight * 0.12, // 靠感覺抓個大概 18% 的高度
-                        left: 0,
-                        right: 0,
-                        child: _buildWorksiteInfo(),
-                      ),
+                          // --- ✨ [魔改點 4] 淺色疊加 -> 奶油米色 ---
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: screenHeight * 0.9,
+                            child: ClipPath(
+                              clipper: OverlayArcClipper(),
+                              child: Container(
+                                // 套用奶油米色 + 你原本的透明度
+                                color: mainContentColorLight.withAlpha(200),
+                              ),
+                            ),
+                          ),
 
-                      // --- 打卡按鈕 (中間) ---
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 50.0),
-                          child: _buildClockInButton(mainContentColorDark),
-                        ),
-                      ),
-                      // --- ✨ [魔改點 2] 新增：上下班時間 ---
-                      Positioned(
-                        bottom: screenHeight * 0.2, // 離底部 10% 的高度
-                        left: 0,
-                        right: 0,
-                        child: _buildClockTimes(),
-                      ),
-                    ],
-                  );
-                },
+                          // --- [保留] 打卡地點 (文字換色) ---
+                          Positioned(
+                            top: screenHeight * 0.12,
+                            left: 0,
+                            right: 0,
+                            child: _buildWorksiteInfo(Colors.white), // <-- 改為白色
+                          ),
+
+                          // --- [保留] 打卡按鈕 (大改造) ---
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 50.0),
+                              child: _buildClockInButton(
+                                accentOrange,
+                              ), // <-- 傳入婚禮橘
+                            ),
+                          ),
+
+                          // --- [保留] 上下班時間 (文字換色) ---
+                          Positioned(
+                            bottom: screenHeight * 0.13,
+                            left: 0,
+                            right: 0,
+                            child: _buildClockTimes(
+                              Colors.white, // <-- 改為白色
+                              Colors.white70, // <-- 改為半透明白色
+                            ), // <-- 傳入灰色
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -160,11 +191,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ✨ [保留] 你的 Header 寫得超讚
-  Widget _buildHeader() {
-    const Color mainContentColorDark = Color(0xFF36B37E);
+  // ✨ [保留] Header 大改造，注入配色
+  Widget _buildHeader({
+    required Color accentOrange,
+    required Color darkGrayText,
+    required Color lightGrayText,
+  }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, 16.0),
+      padding: const EdgeInsets.fromLTRB(32.0, 64.0, 32.0, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -173,36 +207,48 @@ class _HomePageState extends State<HomePage> {
             children: [
               Text(
                 '$_formattedDate (${_dayOfWeek.isEmpty ? "" : _dayOfWeek})',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: lightGrayText, // <-- 使用淺灰
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 _formattedTime.isEmpty ? "--:--" : _formattedTime,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: darkGrayText, // <-- 使用深灰
                 ),
               ),
             ],
           ),
           const Spacer(),
-          Container(
+          // --- 換回膠囊按鈕，才 high-vibe！ ---
+          // --- Hi,duck! 文字無背景、主色、波浪線 ---
+          Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 24.0,
               vertical: 12.0,
             ),
-            decoration: BoxDecoration(
-              color: mainContentColorDark,
-              borderRadius: BorderRadius.circular(30.0),
-            ),
-            child: const Text(
-              'Hi,duck!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hi,duck',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: mainContentColorDark,
+                  ),
+                ),
+                _HandDrawnWaveLine(
+                  color: mainContentColorDark,
+                  width: 120,
+                  height: 14,
+                ),
+              ],
             ),
           ),
         ],
@@ -210,48 +256,59 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- ✨ [保留] 你的 Button 也很讚 ---
-  Widget _buildClockInButton(Color primaryColor) {
+  // ✨ [保留] 按鈕大簡化！回歸初心！
+  Widget _buildClockInButton(Color accentOrange) {
+    const double outerSize = 200;
+    const double innerSize = 170;
     return Container(
-      width: 200,
-      height: 200,
+      width: outerSize,
+      height: outerSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white,
-        border: Border.all(color: primaryColor.withOpacity(0.5), width: 8),
+        border: Border.all(color: accentOrange, width: 8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: accentOrange.withOpacity(0.25),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
           ),
           BoxShadow(
-            color: primaryColor.withOpacity(0.15),
-            blurRadius: 0,
-            spreadRadius: 4,
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Center(
         child: Container(
-          width: 180,
-          height: 180,
+          width: innerSize,
+          height: innerSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFFB2F5D6), // 更淺的綠色
+            color: const Color(0xFFFFF3E0), // 更淺的奶油米色
+            border: Border.all(color: Color(0xFFE0C9A6), width: 2), // 更淺的咖啡色
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: ElevatedButton(
             onPressed: () {
               print('打卡按鈕被按下了！');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: primaryColor,
+              backgroundColor: accentOrange,
+              foregroundColor: Colors.white,
               shape: const CircleBorder(),
-              elevation: 0,
+              elevation: 8,
+              shadowColor: accentOrange.withOpacity(0.18),
               padding: const EdgeInsets.all(20),
               textStyle: const TextStyle(
-                fontFamily: 'NotoSansTC',
+                fontFamily: 'NotoSansiTC',
                 fontSize: 40,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -264,19 +321,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- ✨ [魔改點 3] 新增：打卡地點 Widget ---
-  Widget _buildWorksiteInfo() {
-    return const Row(
+  // ✨ [保留] 打卡地點 (文字換色)
+  Widget _buildWorksiteInfo(Color textColor) {
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('📍', style: TextStyle(fontSize: 26)),
-        SizedBox(width: 10),
+        const Text('📍', style: TextStyle(fontSize: 26)),
+        const SizedBox(width: 10),
         Text(
-          '胖丁營造倉庫', // TODO: 之後換成變數
+          '胖丁營造倉庫',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: textColor, // <-- 使用傳入的顏色
             letterSpacing: 2,
           ),
         ),
@@ -284,8 +341,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- ✨ [魔改點 4] 新增：上下班時間 Widget ---
-  Widget _buildClockTimes() {
+  // ✨ [保留] 上下班時間 (文字換色)
+  Widget _buildClockTimes(Color primaryTextColor, Color secondaryTextColor) {
     const String clockInTime = '07:58';
     const String clockOutTime = '17:02';
 
@@ -293,36 +350,117 @@ class _HomePageState extends State<HomePage> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTimeColumn('上班時間', clockInTime),
+        _buildTimeColumn(
+          '上班時間',
+          clockInTime,
+          primaryTextColor,
+          secondaryTextColor,
+        ),
         Container(
           height: 80,
-          width: 2,
-          color: Colors.white,
+          width: 3,
+          color: Colors.grey, // <-- 分隔線換成半透明白色
           margin: const EdgeInsets.symmetric(horizontal: 32.0),
         ),
-        _buildTimeColumn('下班時間', clockOutTime),
+        _buildTimeColumn(
+          '下班時間',
+          clockOutTime,
+          primaryTextColor,
+          secondaryTextColor,
+        ),
       ],
     );
   }
 
-  // _buildClockTimes 的輔助 Widget
-  Widget _buildTimeColumn(String title, String time) {
+  // 輔助 Widget (也要吃顏色)
+  static const Color mainContentColorDark = Color(0xFF6D635B); // 改為沉穩的暖灰色
+  Widget _buildTimeColumn(
+    String title,
+    String time,
+    Color primaryTextColor,
+    Color secondaryTextColor,
+  ) {
     return Column(
       children: [
         Text(
           title,
-          style: TextStyle(fontSize: 22, color: Colors.white, letterSpacing: 1),
+          style: TextStyle(
+            fontSize: 22,
+            color: mainContentColorDark, // <-- 換成傳入的次要顏色
+            letterSpacing: 1,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           time,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: mainContentColorDark, // <-- 使用 mainContentColorDark
           ),
         ),
       ],
     );
   }
+}
+
+// --- 手繪風波浪線 Widget ---
+class _HandDrawnWaveLine extends StatelessWidget {
+  final Color color;
+  final double width;
+  final double height;
+
+  const _HandDrawnWaveLine({
+    required this.color,
+    this.width = 100,
+    this.height = 12,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: CustomPaint(painter: _HandDrawnWavePainter(color: color)),
+    );
+  }
+}
+
+class _HandDrawnWavePainter extends CustomPainter {
+  final Color color;
+
+  _HandDrawnWavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final path = Path();
+    // 手繪感波浪（不規則）
+    path.moveTo(0, size.height * 0.7);
+    path.cubicTo(
+      size.width * 0.18,
+      size.height * 0.2,
+      size.width * 0.32,
+      size.height * 1.2,
+      size.width * 0.5,
+      size.height * 0.7,
+    );
+    path.cubicTo(
+      size.width * 0.68,
+      size.height * 0.2,
+      size.width * 0.82,
+      size.height * 1.2,
+      size.width,
+      size.height * 0.7,
+    );
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

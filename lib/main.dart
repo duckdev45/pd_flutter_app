@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     // 這裡我嘗試使用一個更飽和、略深的橘紅，在工地背景下會更顯眼，
     // 並且給它一點點的透明度，讓背景若隱若現。
     // 如果想要圖一那種比較內斂的風格，也可以考慮用深藍色或深灰色來搭配。
-    const Color primaryAccentColor = Color(0xFFB85C1A); // 調整後的主題色
+    const Color primaryAccentColor = Color(0xFFF7AE34); // 改為 home_page 的婚禮橘
     const Color darkerOverlay = Colors.black45; // 用於背景圖上的深色覆蓋
 
     final ThemeData customTheme = ThemeData(
@@ -96,7 +96,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           Positioned.fill(
-            child: Container(color: Colors.grey.withValues(alpha: 1)),
+            // child: Container(color: Colors.grey.withValues(alpha: 1)),
+            child: Container(color: Colors.black.withValues(alpha: 0.9)),
           ),
 
           // 3. UI 內容 (Logo, 表單)，置中顯示
