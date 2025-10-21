@@ -1,9 +1,43 @@
-// lib/home_page.dart
-
 import 'package:flutter/material.dart';
-import 'announcement_page.dart'; // 引入公告頁
-import 'clock_in_page.dart'; // 引入打卡頁
-import 'settings_page.dart'; // 引入設定頁
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // 導入中文日期符號
+import 'dart:async';
+
+// --- (我是分隔線) ---
+// ✨ [保留] 你的 Clipper 寫的超棒！
+class MainArcClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.moveTo(0, 80);
+    path.quadraticBezierTo(size.width / 2, 20, size.width, 80);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+// ✨ [保留] 你的第 2 個 Clipper 也超棒！
+class OverlayArcClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.moveTo(0, 100);
+    path.quadraticBezierTo(size.width / 2, 40, size.width, 100);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+// --- (Clipper 結束) ---
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,62 +47,282 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 記住目前選擇的是哪個頁面的索引 (index)
-  // 0: 公告, 1: 打卡, 2: 設定
-  // 預設是 1 (打卡頁面)，所以一進來就是打卡頁
-  int _selectedIndex = 1;
+  // --- (你的 initState, dispose, _updateTime - 完全不用動) ---
+  String _formattedDate = '';
+  String _dayOfWeek = '';
+  String _formattedTime = '';
+  Timer? _timer;
 
-  // 把三個頁面放進一個 List 裡，方便我們用 index 切換
-  static const List<Widget> _widgetOptions = <Widget>[
-    AnnouncementPage(),
-    ClockInPage(),
-    SettingsPage(),
-  ];
-
-  // 當使用者點擊底下按鈕時，這個方法會被觸發
-  void _onItemTapped(int index) {
-    // 用 setState 更新 _selectedIndex 的值，Flutter 會自動重繪畫面
-    setState(() {
-      _selectedIndex = index;
+  @override
+  void initState() {
+    super.initState();
+    initializeDateFormatting('zh_TW', null).then((_) {
+      _updateTime();
+      _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+        _updateTime();
+      });
     });
   }
 
-  // 根據選擇的 index，決定 AppBar 要顯示什麼標題
-  String _getTitle() {
-    switch (_selectedIndex) {
-      case 0:
-        return '最新公告';
-      case 1:
-        return '打卡';
-      case 2:
-        return '設定';
-      default:
-        return '磐鼎營造';
-    }
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _updateTime() {
+    final now = DateTime.now();
+    setState(() {
+      _formattedDate = DateFormat('yyyy-MM-dd').format(now);
+      _dayOfWeek = DateFormat('E', 'zh_TW').format(now);
+      _formattedTime = DateFormat('HH:mm').format(now);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color pageBackgroundColor = Color(0xFFF8F8F8);
+    const Color mainContentColorDark = Color(0xFF36B37E);
+    const Color mainContentColorLight = Color(0xFF6DC8A3);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitle()), // 標題會根據頁面切換
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false, // 拿掉預設的返回箭頭
+      backgroundColor: pageBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- 1. 頂部文字區塊 ---
+            _buildHeader(), // ✨ [保留] 你的 Header 寫得很好
+            // --- 2. 綠色主內容區塊 ---
+            Expanded(
+              child: LayoutBuilder(
+                // ✨ [保留] 你的 LayoutBuilder 結構是正確的！
+                builder: (context, constraints) {
+                  final double screenHeight = constraints.maxHeight;
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // --- 深綠色 (底下) ---
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: screenHeight,
+                        child: ClipPath(
+                          clipper: MainArcClipper(),
+                          child: Container(color: mainContentColorDark),
+                        ),
+                      ),
+                      // --- 淺綠色 (疊在上面) ---
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: screenHeight * 0.9,
+                        child: ClipPath(
+                          clipper: OverlayArcClipper(),
+                          child: Container(
+                            color: mainContentColorLight.withAlpha(200),
+                          ),
+                        ),
+                      ),
+
+                      // --- ✨ [魔改點 1] 新增：打卡地點 ---
+                      Positioned(
+                        top: screenHeight * 0.12, // 靠感覺抓個大概 18% 的高度
+                        left: 0,
+                        right: 0,
+                        child: _buildWorksiteInfo(),
+                      ),
+
+                      // --- 打卡按鈕 (中間) ---
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 50.0),
+                          child: _buildClockInButton(mainContentColorDark),
+                        ),
+                      ),
+                      // --- ✨ [魔改點 2] 新增：上下班時間 ---
+                      Positioned(
+                        bottom: screenHeight * 0.2, // 離底部 10% 的高度
+                        left: 0,
+                        right: 0,
+                        child: _buildClockTimes(),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-      // body 的內容會根據 _selectedIndex 從 _widgetOptions List 中選取
-      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
-      // 關鍵！底部的導航欄
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.campaign), label: '公告'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: '打卡'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
+    );
+  }
+
+  // ✨ [保留] 你的 Header 寫得超讚
+  Widget _buildHeader() {
+    const Color mainContentColorDark = Color(0xFF36B37E);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$_formattedDate (${_dayOfWeek.isEmpty ? "" : _dayOfWeek})',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formattedTime.isEmpty ? "--:--" : _formattedTime,
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 12.0,
+            ),
+            decoration: BoxDecoration(
+              color: mainContentColorDark,
+              borderRadius: BorderRadius.circular(30.0),
+            ),
+            child: const Text(
+              'Hi,duck!',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
         ],
-        currentIndex: _selectedIndex, // 目前選中的按鈕
-        selectedItemColor: Colors.orange, // 選中時的顏色
-        onTap: _onItemTapped, // 點擊事件
       ),
+    );
+  }
+
+  // --- ✨ [保留] 你的 Button 也很讚 ---
+  Widget _buildClockInButton(Color primaryColor) {
+    return Container(
+      width: 200,
+      height: 200,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: primaryColor.withOpacity(0.5), width: 8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: primaryColor.withOpacity(0.15),
+            blurRadius: 0,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          width: 180,
+          height: 180,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFFB2F5D6), // 更淺的綠色
+          ),
+          child: ElevatedButton(
+            onPressed: () {
+              print('打卡按鈕被按下了！');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: primaryColor,
+              shape: const CircleBorder(),
+              elevation: 0,
+              padding: const EdgeInsets.all(20),
+              textStyle: const TextStyle(
+                fontFamily: 'NotoSansTC',
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            child: const Text('打卡'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- ✨ [魔改點 3] 新增：打卡地點 Widget ---
+  Widget _buildWorksiteInfo() {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('📍', style: TextStyle(fontSize: 26)),
+        SizedBox(width: 10),
+        Text(
+          '胖丁營造倉庫', // TODO: 之後換成變數
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- ✨ [魔改點 4] 新增：上下班時間 Widget ---
+  Widget _buildClockTimes() {
+    const String clockInTime = '07:58';
+    const String clockOutTime = '17:02';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTimeColumn('上班時間', clockInTime),
+        Container(
+          height: 80,
+          width: 2,
+          color: Colors.white,
+          margin: const EdgeInsets.symmetric(horizontal: 32.0),
+        ),
+        _buildTimeColumn('下班時間', clockOutTime),
+      ],
+    );
+  }
+
+  // _buildClockTimes 的輔助 Widget
+  Widget _buildTimeColumn(String title, String time) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: TextStyle(fontSize: 22, color: Colors.white, letterSpacing: 1),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          time,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }

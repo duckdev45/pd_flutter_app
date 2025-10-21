@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
-// 假設你的 home_page.dart 存在，先放著
-// import 'home_page.dart';
-
-// --- (我是分隔線) ---
-// 為了方便導航，我先做一個假的 HomePage，這樣按下登入鈕才不會報錯
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('打卡 App 主頁')),
-      body: const Center(child: Text('恭喜你，成功登入啦！🎉')),
-    );
-  }
-}
-// --- (以上是假頁面，你可以換成你自己的) ---
-
+import 'home_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,75 +10,66 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✨ [魔改點 1] 定義你的專屬色票！
-    // 把 #9B6E23 轉成 Flutter 的 Color 物件，以後要換色從這裡改就好，方便管理
-    const Color customOrange = Color(0xFF9B6E23);
-    const Color lightGrey = Color(0xFFF5F5F5); // 比 Colors.grey[200] 再細緻一點的灰
+    // ✨ [魔改點 1] 配色調整：
+    // 在有背景圖的情況下，原本的 #9B6E23 可能會被背景吃掉。
+    // 我們選一個亮度更高、稍微帶點土色或更深的橘色，
+    // 或是為了讓前景突出，直接使用一個能與背景圖形成良好對比的顏色。
+    // 這裡我嘗試使用一個更飽和、略深的橘紅，在工地背景下會更顯眼，
+    // 並且給它一點點的透明度，讓背景若隱若現。
+    // 如果想要圖一那種比較內斂的風格，也可以考慮用深藍色或深灰色來搭配。
+    const Color primaryAccentColor = Color(0xFFB85C1A); // 調整後的主題色
+    const Color darkerOverlay = Colors.black45; // 用於背景圖上的深色覆蓋
 
-    // ✨ [魔改點 2] 整個 App 的主題設定，注入你的橘色靈魂
     final ThemeData customTheme = ThemeData(
       useMaterial3: true,
-      fontFamily: 'NotoSansTC', // 這個字體選得好，繼續用
-      scaffoldBackgroundColor: lightGrey, // 使用我們定義的淺灰色當背景
+      fontFamily: 'NotoSansTC',
+      scaffoldBackgroundColor: Colors.transparent,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: customOrange,
-        primary: customOrange, // 主要色系，按鈕、焦點顏色都會吃到
-        background: lightGrey, // 定義一下背景色
+        seedColor: primaryAccentColor,
+        primary: primaryAccentColor,
+        // 背景色不再是單純的淺灰，交給 ImageBackground 處理
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.white.withAlpha(200),
+        // 輸入框內部略微透明，有一點點穿透感
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18.0,
           horizontal: 25.0,
         ),
         prefixIconColor: Colors.grey[600],
-        // ✨ [魔改點 3] 讓輸入框的邊框風格更統一
-        // 拿掉原本 TextField 裡面的 enabledBorder, focusedBorder
-        // 直接在 Theme 裡統一設定，這樣所有 TextField 都長一樣，超乾淨
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide.none, // 無邊框設計，更接近圖一
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide.none, // 無邊框設計
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
-          borderSide: const BorderSide(color: customOrange, width: 2.0),
+          borderSide: BorderSide(
+            color: primaryAccentColor,
+            width: 2.0,
+          ), // 聚焦時有邊框
         ),
-        hintStyle: TextStyle(color: Colors.grey[400]),
+        hintStyle: TextStyle(color: Colors.grey[500]),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0, // 無陰影
+        iconTheme: IconThemeData(color: Colors.white), // 返回箭頭設為白色
       ),
     );
 
     return MaterialApp(
-      title: '磐鼎營造',
+      title: 'XX營造',
       theme: customTheme,
       home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
-
-class CustomBackgroundClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height * 0.8);
-    path.quadraticBezierTo(
-        size.width * 0.25, size.height, size.width * 0.5, size.height * 0.9);
-    path.quadraticBezierTo(
-        size.width * 0.75, size.height * 0.8, size.width, size.height * 0.9);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -107,119 +82,142 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    // 直接從 Theme 拿我們定義好的顏色，方便又不會出錯
-    final Color primaryColor = Theme.of(context).colorScheme.primary;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final Color primaryAccentColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // 上半部：背景 + Header
-            SizedBox(
-              height: screenHeight * 0.45, // 稍微調低一點，讓表單空間多一些
-              child: ClipPath(
-                clipper: CustomBackgroundClipper(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  color: primaryColor, // ✨ [魔改點 4] 直接使用我們的主題橘色，告別漸層
-                  child: Stack(
-                    children: [
-                      // Logo 置中
-                      Align(
-                        alignment: Alignment.center,
-                        child: Image.asset(
-                          'assets/images/pd_logo_dark.png', // 記得要在 pubspec.yaml 設定這個 asset 喔！
-                          height: 150,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/construction_bg.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(color: Colors.grey.withValues(alpha: 1)),
+          ),
+
+          // 3. UI 內容 (Logo, 表單)，置中顯示
+          SingleChildScrollView(
+            // 保持可滾動，避免鍵盤彈出時內容溢出
+            child: SizedBox(
+              height: screenHeight, // 讓 SingleChildScrollView 撐滿高度
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center, // 垂直置中
+                children: [
+                  const Spacer(flex: 5), // 上方留白，讓 Logo 偏上
+                  Image.asset('assets/images/main.png', height: 150),
+                  const SizedBox(height: 10),
+                  // App Title
+                  const Text(
+                    '胖丁營造',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white, // 白色字在深色背景上更清楚
+                      letterSpacing: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Slogan 或副標題 (參考圖一的 "Create late hour...")
+                  const Text(
+                    '出勤系統',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70, // 稍微半透明的白色
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Logo 和表單之間留白
+                  // 表單區塊
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                    // 左右邊距拉大
+                    child: Column(
+                      children: [
+                        // 輸入框
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: '手機號碼',
+                            prefixIcon: const Icon(Icons.phone_iphone_rounded),
+                            // ✨ [魔改點 5] 圖一的輸入框左邊有返回箭頭，這裡我們可以加一個
+                            // 或者簡化，只保留 Phone 圖標
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 50,
+                            ),
+                            // 如果你想要圖一那樣的透明輸入框，可以調整 fillColor 和 borderSide
+                          ),
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                          ), // 輸入文字顏色
                         ),
-                      ),
-                      // 標題靠右下
-                      const Align(
-                        alignment: Alignment(0.9, 0.6), // 稍微往上跟左邊挪一點
-                        child: Text(
-                          '磐鼎營造',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white, // 在深色背景上，用白色字更突出
-                            letterSpacing: 4,
+                        const SizedBox(height: 20),
+                        TextField(
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            hintText: '密碼',
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 50,
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // 登入按鈕
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HomePage(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryAccentColor,
+                            // 使用調整後的主題色
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 55),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          child: const Text('登入'),
+                        ),
+
+                        const SizedBox(height: 20),
+                        // 註冊連結
+                        TextButton(
+                          onPressed: () {
+                            print('跳轉到註冊頁面！');
+                          },
+                          child: const Text(
+                            '還沒有帳號？點此註冊',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ), // 在深色背景上用白色
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20), // 給上面和表單之間一點呼吸空間
-
-            // 下半部：表單
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Column(
-                children: [
-                  // ✨ [魔改點 5] 簡化 TextField，因為樣式都交給 Theme 去管了
-                  const TextField(
-                    decoration: InputDecoration(
-                      hintText: '手機號碼', // 改成手機號碼比較符合我們之前的討論
-                      prefixIcon: Icon(Icons.phone_iphone_rounded),
-                    ),
-                    keyboardType: TextInputType.phone, // 鍵盤直接跳數字，貼心！
-                  ),
-                  const SizedBox(height: 20),
-                  const TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: '密碼',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 40),
-
-                  // ✨ [魔改點 6] 登入按鈕，樣式也從 Theme 繼承
-                  ElevatedButton(
-                    onPressed: () {
-                      // 這裡未來會放你的 Supabase 登入驗證
-                      // 現在我們先假設只要按下按鈕，就代表登入成功
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const HomePage()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor, // 吃主題色
-                      foregroundColor: Colors.white, // 文字用白色
-                      minimumSize: const Size(double.infinity, 55), // 滿寬按鈕
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2, // 加一點字距，更有 feel
-                      ),
-                    ),
-                    child: const Text('登入'),
-                  ),
-
-                  // ✨ [魔改點 7] 加上註冊按鈕的入口，讓 UI Flow 更完整
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () {
-                      // 這裡可以導航到你的註冊頁面
-                      print('跳轉到註冊頁面！');
-                    },
-                    child: Text(
-                      '還沒有帳號？點此註冊',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-
+                  const Spacer(flex: 3), // 下方留白，讓整體置中
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

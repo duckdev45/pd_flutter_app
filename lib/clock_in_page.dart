@@ -197,12 +197,7 @@ class _ClockInPageState extends State<ClockInPage> {
           children: [
             Icon(icon, size: 40, color: Colors.orange),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[700],
-              ),
-            ),
+            Text(label, style: TextStyle(color: Colors.grey[700])),
           ],
         ),
       ),
