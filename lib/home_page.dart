@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart'; // 導入中文日期符號
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+final supabase = Supabase.instance.client;
 
 // --- (我是分隔線) ---
 // ✨ [保留] 你的 Clipper 寫的超棒！
@@ -47,21 +50,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // --- (你的 initState, dispose, _updateTime - 完全不用動) ---
   String _formattedDate = '';
   String _dayOfWeek = '';
   String _formattedTime = '';
   Timer? _timer;
 
+  String _nickname = '...'; // <--- 暱稱
+
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('zh_TW', null).then((_) {
-      _updateTime();
+      _updateTime(); // 立即更新一次
       _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
         _updateTime();
       });
     });
+
+    _loadUserData(); // <--- ✨ [新增] 頁面一打開，就去抓使用者資料
   }
 
   @override
@@ -79,6 +85,24 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // <--- ✨ [新增] 抓取暱稱的 Function ---
+  Future<void> _loadUserData() async {
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      // user.userMetadata
+      // 就是我們在 signUp
+      // 時塞 data: {}
+      // 的地方
+      final userNickname = user.userMetadata?['nickname'] as String?;
+      final userFullName = user.userMetadata?['full_name'] as String?;
+
+      setState(() {
+        // 如果有暱稱，就用暱稱；沒有就用姓名；再沒有就用 'User'
+        _nickname = userNickname ?? userFullName ?? 'User';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // ✨ [魔改點 1] 注入靈魂！這才是我們要的配色！
@@ -94,98 +118,91 @@ class _HomePageState extends State<HomePage> {
     const Color mainContentColorLight = Color(0xFFF9F6F1); // <-- 奶油米色
 
     return Scaffold(
-      backgroundColor: mainContentColorLight, // 直接用奶油米色填滿全頁
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 1. 頂部文字區塊 ---
-            _buildHeader(
-              accentOrange: accentOrange,
-              darkGrayText: darkGrayText,
-              lightGrayText: lightGrayText,
-            ),
-
-            // --- 2. 綠色主內容區塊 ---
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // --- 新增底層填滿奶油米色 ---
-                  Container(color: mainContentColorLight),
-
-                  LayoutBuilder(
-                    // ✨ [保留] 你的 LayoutBuilder 結構是正確的！
-                    builder: (context, constraints) {
-                      final double screenHeight = constraints.maxHeight;
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // --- ✨ [魔改點 3] 深色底 -> 燕麥色 ---
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: screenHeight,
-                            child: ClipPath(
-                              clipper: MainArcClipper(),
-                              child: Container(
-                                color: mainContentColorDark,
-                              ), // <-- 套用燕麥色
-                            ),
-                          ),
-
-                          // --- ✨ [魔改點 4] 淺色疊加 -> 奶油米色 ---
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: screenHeight * 0.9,
-                            child: ClipPath(
-                              clipper: OverlayArcClipper(),
-                              child: Container(
-                                // 套用奶油米色 + 你原本的透明度
-                                color: mainContentColorLight.withAlpha(200),
-                              ),
-                            ),
-                          ),
-
-                          // --- [保留] 打卡地點 (文字換色) ---
-                          Positioned(
-                            top: screenHeight * 0.12,
-                            left: 0,
-                            right: 0,
-                            child: _buildWorksiteInfo(Colors.white), // <-- 改為白色
-                          ),
-
-                          // --- [保留] 打卡按鈕 (大改造) ---
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 50.0),
-                              child: _buildClockInButton(
-                                accentOrange,
-                              ), // <-- 傳入婚禮橘
-                            ),
-                          ),
-
-                          // --- [保留] 上下班時間 (文字換色) ---
-                          Positioned(
-                            bottom: screenHeight * 0.13,
-                            left: 0,
-                            right: 0,
-                            child: _buildClockTimes(
-                              Colors.white, // <-- 改為白色
-                              Colors.white70, // <-- 改為半透明白色
-                            ), // <-- 傳入灰色
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+      body: Container(
+        color: mainContentColorLight, // 確保整個背景都是奶油米色
+        child: SafeArea(
+          bottom: false, // 停用底部的安全區域邊距
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- 1. 頂部文字區塊 ---
+              _buildHeader(
+                accentOrange: accentOrange,
+                darkGrayText: darkGrayText,
+                lightGrayText: lightGrayText,
+                nickname: _nickname, // <--- 修正，傳入正確暱稱
               ),
-            ),
-          ],
+
+              // --- 2. 主內容區塊 ---
+              Expanded(
+                child: LayoutBuilder(
+                  // 直接使用 LayoutBuilder，移除多餘的 Stack
+                  builder: (context, constraints) {
+                    final double screenHeight = constraints.maxHeight;
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // --- ✨ [魔改點 3] 深色底 -> 燕麥色 ---
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: screenHeight,
+                          child: ClipPath(
+                            clipper: MainArcClipper(),
+                            child: Container(
+                              color: mainContentColorDark,
+                            ), // <-- 套用燕麥色
+                          ),
+                        ),
+
+                        // --- ✨ [魔改點 4] 淺色疊加 -> 奶油米色 ---
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: screenHeight * 0.9,
+                          child: ClipPath(
+                            clipper: OverlayArcClipper(),
+                            child: Container(
+                              // 套用奶油米色 + 你原本的透明度
+                              color: mainContentColorLight.withAlpha(200),
+                            ),
+                          ),
+                        ),
+
+                        // --- [保留] 打卡地點 (文字換色) ---
+                        Positioned(
+                          top: screenHeight * 0.12,
+                          left: 0,
+                          right: 0,
+                          child: _buildWorksiteInfo(Colors.white), // <-- 改為白色
+                        ),
+
+                        // --- [保留] 打卡按鈕 (大改造) ---
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 50.0),
+                            child: _buildClockInButton(
+                              accentOrange,
+                            ), // <-- 傳入婚禮橘
+                          ),
+                        ),
+
+                        // --- [保留] 上下班時間 (文字換色) ---
+                        Positioned(
+                          bottom: screenHeight * 0.18,
+                          left: 0,
+                          right: 0,
+                          child: _buildClockTimes(Colors.white, Colors.white70),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -196,6 +213,7 @@ class _HomePageState extends State<HomePage> {
     required Color accentOrange,
     required Color darkGrayText,
     required Color lightGrayText,
+    required String nickname, // <--- ✨ [修改] 接收暱稱
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(32.0, 64.0, 32.0, 0),
@@ -236,7 +254,7 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi,duck',
+                  'Hi, $nickname', // <--- 顯示暱稱
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -344,7 +362,7 @@ class _HomePageState extends State<HomePage> {
   // ✨ [保留] 上下班時間 (文字換色)
   Widget _buildClockTimes(Color primaryTextColor, Color secondaryTextColor) {
     const String clockInTime = '07:58';
-    const String clockOutTime = '17:02';
+    const String clockOutTime = '--:--';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -359,7 +377,7 @@ class _HomePageState extends State<HomePage> {
         Container(
           height: 80,
           width: 3,
-          color: Colors.grey, // <-- 分隔線換成半透明白色
+          color: Colors.grey,
           margin: const EdgeInsets.symmetric(horizontal: 32.0),
         ),
         _buildTimeColumn(
@@ -373,7 +391,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 輔助 Widget (也要吃顏色)
-  static const Color mainContentColorDark = Color(0xFF6D635B); // 改為沉穩的暖灰色
+  static const Color mainContentColorDark = Color(0xFF6D635B);
+
   Widget _buildTimeColumn(
     String title,
     String time,
