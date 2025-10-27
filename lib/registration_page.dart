@@ -101,7 +101,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
-          (route) => false, // 移除所有舊頁面
+              (route) => false, // 移除所有舊頁面
         );
       }
     } on AuthException catch (e) {
